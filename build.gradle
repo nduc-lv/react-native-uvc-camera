@@ -1,0 +1,35 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    if (project == rootProject) {
+        repositories {
+            maven { url 'https://maven.google.com' }
+        }
+        dependencies {
+            classpath 'com.android.tools.build:gradle:7.0.2'
+        }
+    }
+}
+
+allprojects {
+    repositories {
+			maven { url 'https://maven.google.com' }
+			maven {
+				url 'https://raw.githubusercontent.com/saki4510t/libcommon/master/repository'
+				allowInsecureProtocol = true
+			}
+    }
+}
+
+// task clean(type: Delete) {
+// 	delete rootProject.buildDir
+// }
+
+ext {
+	supportLibVersion = '1.0.0'  // variable that can be referenced to keep support libs consistent
+	commonLibVersion= '4.1.1'
+	versionCompiler = 31
+	versionTarget = 28
+	versionNameString = '1.0.0'
+	javaSourceCompatibility = JavaVersion.VERSION_1_8
+	javaTargetCompatibility = JavaVersion.VERSION_1_8
+}

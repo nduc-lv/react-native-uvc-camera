@@ -1994,6 +1994,39 @@ static jint nativeGetPrivacy(JNIEnv *env, jobject thiz,
 	RETURN(result, jint);
 }
 
+// add by qzm
+static jint nativeUVCExtWrite(JNIEnv *env, jobject thiz, ID_TYPE id_camera,
+    jint addr, jbyteArray pdat, jint len) {
+
+	jint result = JNI_ERR;
+
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		unsigned char *pbuf = (unsigned char*)env->GetByteArrayElements(pdat, JNI_FALSE);
+		if (pbuf != NULL) {
+		    result = camera->uvc_ext_write((int)addr, pbuf, (int)len);
+		    env->ReleaseByteArrayElements(pdat, (jbyte*)pbuf, JNI_FALSE);
+		}
+	}
+	return result;
+}
+
+static jint nativeUVCExtRead(JNIEnv *env, jobject thiz, ID_TYPE id_camera,
+    jint addr, jbyteArray pdat, jint len) {
+
+	jint result = JNI_ERR;
+
+	UVCCamera *camera = reinterpret_cast<UVCCamera *>(id_camera);
+	if (LIKELY(camera)) {
+		unsigned char *pbuf = (unsigned char*)env->GetByteArrayElements(pdat, JNI_FALSE);
+		if (pbuf != NULL) {
+		    result = camera->uvc_ext_read((int)addr, pbuf, (int)len);
+		    env->ReleaseByteArrayElements(pdat, (jbyte*)pbuf, JNI_FALSE);
+		}
+	}
+	return result;
+}
+
 //**********************************************************************
 //
 //**********************************************************************
@@ -2013,6 +2046,10 @@ jint registerNativeMethods(JNIEnv* env, const char *class_name, JNINativeMethod 
 }
 
 static JNINativeMethod methods[] = {
+    // add by qzm
+        { "nativeUVCExtWrite",					"(JI[BI)I", (void *) nativeUVCExtWrite },
+        { "nativeUVCExtRead",					"(JI[BI)I", (void *) nativeUVCExtRead },
+
 	{ "nativeCreate",					"()J", (void *) nativeCreate },
 	{ "nativeDestroy",					"(J)V", (void *) nativeDestroy },
 	//

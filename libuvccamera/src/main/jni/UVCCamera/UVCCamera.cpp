@@ -46,6 +46,8 @@
 #include "Parameters.h"
 #include "libuvc_internal.h"
 
+#include "libUVCCamera.h"   // add by qzm.
+
 #define	LOCAL_DEBUG 0
 
 //**********************************************************************
@@ -2282,4 +2284,72 @@ int UVCCamera::getAnalogVideoLockState() {
 		}
 	}
 	RETURN(0, int);
+}
+
+// add by qzm
+#define USB_SET_CUR 0x01
+#define USB_GET_CUR 0x81
+#define USB_COMMAND (0x0a<<8)
+#define USB_DATA    (0x0b<<8)
+
+int UVCCamera::uvc_ext_write(int addr, unsigned char *pdat, int len)
+{
+    unsigned char cmd[8];
+    unsigned char dat[8];
+
+    libusb_device_handle *devh = mDeviceHandle->usb_devh;
+    if (devh == NULL)
+        return -1;
+    if (len > 8)
+        return -1;
+
+    cmd[0] = 0;
+    cmd[1] = 0x82;
+    cmd[2] = (addr&0xff);
+    cmd[3] = ((addr&0xff00)>>8);
+    cmd[4] = len;
+    cmd[5] = 0;
+    cmd[6] = 0;
+    cmd[7] = 0;
+    if (libusb_control_transfer(devh, 0x21, USB_SET_CUR, USB_COMMAND, 0x0400, cmd, 8, 1000) < 0) {
+        return -1;
+    }
+
+    memcpy(dat, pdat, len);
+    if (libusb_control_transfer(devh, 0x21, USB_SET_CUR, USB_DATA, 0x0400, dat, 8, 1000) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int UVCCamera::uvc_ext_read(int addr, unsigned char *pdat, int len)
+{
+    unsigned char cmd[8];
+    unsigned char dat[8];
+
+    libusb_device_handle *devh = mDeviceHandle->usb_devh;
+    if (devh == NULL)
+        return -1;
+    if (len > 8)
+        return -1;
+
+    cmd[0] = 0;
+    cmd[1] = 0xc2;
+    cmd[2] = (addr&0xff);
+    cmd[3] = ((addr&0xff00)>>8);
+    cmd[4] = len;
+    cmd[5] = 0;
+    cmd[6] = 0;
+    cmd[7] = 0;
+    if (libusb_control_transfer(devh, 0x21, USB_SET_CUR, USB_COMMAND, 0x0400, cmd, 8, 1000) < 0) {
+        return -1;
+    }
+
+    if (libusb_control_transfer(devh, 0xa1, USB_GET_CUR, USB_DATA, 0x0400, dat, 8, 1000) < 0) {
+        return -1;
+    }
+    memcpy(pdat, dat, len);
+
+    return 0;
 }

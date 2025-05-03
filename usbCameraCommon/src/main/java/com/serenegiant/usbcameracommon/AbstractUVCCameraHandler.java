@@ -39,7 +39,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.widget.Toast;
 
 import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
@@ -48,7 +47,6 @@ import com.serenegiant.encoder.MediaSurfaceEncoder;
 import com.serenegiant.encoder.MediaVideoBufferEncoder;
 import com.serenegiant.encoder.MediaVideoEncoder;
 import com.serenegiant.usb.IFrameCallback;
-import com.serenegiant.usb.Size;
 import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.UVCCamera;
 import com.serenegiant.widget.CameraViewInterface;
@@ -63,6 +61,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -77,9 +76,10 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		public void onStopPreview();
 		public void onStartRecording();
 		public void onStopRecording();
-		public void onPictureTaken(Bitmap bitmap);
-		public void onVideoRecorded(String path);
 		public void onError(final Exception e);
+		public void onCaptureStillFinish();
+		public void onRecordFinish();
+
 	}
 
 	private static final int MSG_OPEN = 0;
@@ -210,6 +210,11 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		sendEmptyMessage(MSG_CAPTURE_START);
 	}
 
+	public void startRecording(final String path) {
+		checkReleased();
+		sendMessage(obtainMessage(MSG_CAPTURE_START, path));
+	}
+
 	public void stopRecording() {
 		sendEmptyMessage(MSG_CAPTURE_STOP);
 	}
@@ -243,66 +248,78 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		sendMessage(obtainMessage(MSG_MEDIA_UPDATE, path));
 	}
 
-	public boolean getAutoFocus() {
-		checkReleased();
-		final CameraThread thread = mWeakThread.get();
-		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
-		if (camera != null) {
-			return camera.getAutoFocus();
-		}
-		throw new IllegalStateException();
-	}
-
-	public void setAutoFocus(final boolean value) {
-		checkReleased();
-		final CameraThread thread = mWeakThread.get();
-		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
-		if (camera != null) {
-			camera.setAutoFocus(value);
-		}
-		throw new IllegalStateException();
-	}
-
-	public boolean getAutoWhiteBlance() {
-		checkReleased();
-		final CameraThread thread = mWeakThread.get();
-		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
-		if (camera != null) {
-			return camera.getAutoWhiteBlance();
-		}
-		throw new IllegalStateException();
-	}
-
-	public void setAutoWhiteBlance(final boolean value) {
-		checkReleased();
-		final CameraThread thread = mWeakThread.get();
-		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
-		if (camera != null) {
-			camera.setAutoWhiteBlance(value);
-		}
-		throw new IllegalStateException();
-	}
-
 	public boolean checkSupportFlag(final long flag) {
 		checkReleased();
 		final CameraThread thread = mWeakThread.get();
 		return thread != null && thread.mUVCCamera != null && thread.mUVCCamera.checkSupportFlag(flag);
 	}
 
+	public void updateLimit(final long flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				camera.updateBrightnessLimit();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				camera.updateExposureLimit();
+			} else if (flag == UVCCamera.CTRL_AE) {
+				camera.updateExposureModeLimt();
+			}
+		}
+
+	}
+
+	public int getMin(final int flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				return camera.getBrightnessMin();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				return camera.getExposureAbsMin();
+			}
+		}
+		throw new IllegalStateException();
+	}
+	public int getMax(final int flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				return camera.getBrightnessMax();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				return camera.getExposureAbsMax();
+			}
+		}
+		throw new IllegalStateException();
+	}
+	public int getDef(final int flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				return camera.getBrightnessDef();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				return camera.getExposureAbsDef();
+			}
+		}
+		throw new IllegalStateException();
+	}
 	public int getValue(final int flag) {
 		checkReleased();
 		final CameraThread thread = mWeakThread.get();
 		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
 		if (camera != null) {
-			switch (flag) {
-			case UVCCamera.CTRL_FOCUS_REL:
-				return camera.getFocus();
-			case UVCCamera.CTRL_ZOOM_REL:
-				return camera.getZoom();
-			case UVCCamera.PU_BRIGHTNESS:
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
 				return camera.getBrightness();
-			case UVCCamera.PU_CONTRAST:
-				return camera.getContrast();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				return camera.getExposureAbs();
+			} else if (flag == UVCCamera.CTRL_AE) {
+				return camera.getExposureMode();
 			}
 		}
 		throw new IllegalStateException();
@@ -313,19 +330,15 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		final CameraThread thread = mWeakThread.get();
 		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
 		if (camera != null) {
-			switch (flag) {
-			case UVCCamera.CTRL_FOCUS_REL:
-				camera.setFocus(value);
-				return camera.getFocus();
-			case UVCCamera.CTRL_ZOOM_REL:
-				camera.setZoom(value);
-				return camera.getZoom();
-			case UVCCamera.PU_BRIGHTNESS:
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
 				camera.setBrightness(value);
 				return camera.getBrightness();
-			case UVCCamera.PU_CONTRAST:
-				camera.setContrast(value);
-				return camera.getContrast();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				camera.setExposureAbs(value);
+				return camera.getExposureAbs();
+			} else if (flag == UVCCamera.CTRL_AE) {
+				camera.setExposureMode(value);
+				return camera.getExposureMode();
 			}
 		}
 		throw new IllegalStateException();
@@ -339,13 +352,141 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			if (flag == UVCCamera.PU_BRIGHTNESS) {
 				camera.resetBrightness();
 				return camera.getBrightness();
-			} else if (flag == UVCCamera.PU_CONTRAST) {
-				camera.resetContrast();
-				return camera.getContrast();
+			} else if (flag == UVCCamera.CTRL_AE_ABS) {
+				camera.resetExposureAbs();
+				return camera.getExposureAbs();
+			} else if (flag == UVCCamera.CTRL_AE) {
+				camera.resetExposureMode();
+				return camera.getExposureMode();
 			}
 		}
 		throw new IllegalStateException();
 	}
+
+	//==========================================================================================
+	public synchronized int getOpticalZoomMin()	{
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalZoomMin();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized int getOpticalZoomMax()	{
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalZoomMax();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized int getOpticalFocusMin() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalFocusMin();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized int getOpticalFocusMax() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalZoomMax();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized int getOpticalZoom() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalZoom();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized void setOpticalZoom(final int zoom, final int doAF) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			camera.setOpticalZoom(zoom, doAF);
+		}
+	}
+
+	public synchronized int getOpticalFocusMode() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalFocusMode();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized void setOpticalFocusMode(final int focusMode) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			camera.setOpticalFocusMode(focusMode);
+		}
+	}
+
+	public synchronized int getOpticalFocus() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			return camera.getOpticalFocus();
+		}
+		throw new IllegalStateException();
+	}
+
+	public synchronized void setOpticalFocus(final int focus) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			camera.setOpticalFocus(focus);
+		}
+	}
+
+	public synchronized void doAutoFocusOnce() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			camera.doAutoFocusOnce();
+		}
+	}
+
+	public synchronized void resetZoomAndFocus() {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			camera.resetZoomAndFocus();
+		}
+	}
+	public synchronized void setZoomType(int type) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			camera.setZoomType(type);
+		}
+	}
+	//==========================================================================================
 
 	@Override
 	public void handleMessage(final Message msg) {
@@ -368,7 +509,7 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			thread.handleCaptureStill((String)msg.obj);
 			break;
 		case MSG_CAPTURE_START:
-			thread.handleStartRecording();
+			thread.handleStartRecording((String)msg.obj);
 			break;
 		case MSG_CAPTURE_STOP:
 			thread.handleStopRecording();
@@ -388,7 +529,6 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		private static final String TAG_THREAD = "CameraThread";
 		private final Object mSync = new Object();
 		private final Class<? extends AbstractUVCCameraHandler> mHandlerClass;
-		private final Activity mActivity;
 		private final WeakReference<Activity> mWeakParent;
 		private final WeakReference<CameraViewInterface> mWeakCameraView;
 		private final int mEncoderType;
@@ -397,6 +537,8 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		private float mBandwidthFactor;
 		private boolean mIsPreviewing;
 		private boolean mIsRecording;
+		private String mRecordPath;
+
 		/**
 		 * shutter sound
 		 */
@@ -436,7 +578,6 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			mHeight = height;
 			mPreviewMode = format;
 			mBandwidthFactor = bandwidthFactor;
-			mActivity = parent;
 			mWeakParent = new WeakReference<Activity>(parent);
 			mWeakCameraView = new WeakReference<CameraViewInterface>(cameraView);
 			loadShutterSound(parent);
@@ -529,21 +670,11 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			if (DEBUG) Log.v(TAG_THREAD, "handleStartPreview:");
 			if ((mUVCCamera == null) || mIsPreviewing) return;
 			try {
-				Size nearestSize = mUVCCamera.getNearestSize(mWidth, mHeight, UVCCamera.FRAME_FORMAT_MJPEG);
-				if (nearestSize == null) {
-					mUVCCamera.setPreviewSize(mWidth, mHeight, 1, 31, UVCCamera.FRAME_FORMAT_MJPEG, mBandwidthFactor);
-				} else {
-					mUVCCamera.setPreviewSize(nearestSize.width, nearestSize.height, 1, 31, UVCCamera.FRAME_FORMAT_MJPEG, mBandwidthFactor);
-				}
+				mUVCCamera.setPreviewSize(mWidth, mHeight, 1, 31, mPreviewMode, mBandwidthFactor);
 			} catch (final IllegalArgumentException e) {
 				try {
-					// Toast.makeText(mActivity, "preview fallback to YUV mode", Toast.LENGTH_SHORT).show();
-					Size nearestSize = mUVCCamera.getNearestSize(mWidth, mHeight, UVCCamera.FRAME_FORMAT_YUYV);
-					if (nearestSize == null) {
-						mUVCCamera.setPreviewSize(mWidth, mHeight, 1, 31, UVCCamera.FRAME_FORMAT_YUYV, mBandwidthFactor);
-					} else {
-						mUVCCamera.setPreviewSize(nearestSize.width, nearestSize.height, 1, 31, UVCCamera.FRAME_FORMAT_YUYV, mBandwidthFactor);
-					}
+					// fallback to YUV mode
+					mUVCCamera.setPreviewSize(mWidth, mHeight, 1, 31, UVCCamera.DEFAULT_PREVIEW_MODE, mBandwidthFactor);
 				} catch (final IllegalArgumentException e1) {
 					callOnError(e1);
 					return;
@@ -586,58 +717,46 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			mSoundPool.play(mSoundId, 0.2f, 0.2f, 0, 0, 1.0f);	// play shutter sound
 			try {
 				final Bitmap bitmap = mWeakCameraView.get().captureStillImage();
-				callOnPictureTaken(bitmap);
-				// // get buffered output stream for saving a captured still image as a file on external storage.
-				// // the file name is came from current time.
-				// // You should use extension name as same as CompressFormat when calling Bitmap#compress.
-				// final File outputFile = TextUtils.isEmpty(path)
-				// 	? MediaMuxerWrapper.getCaptureFile(Environment.DIRECTORY_DCIM, ".png")
-				// 	: new File(path);
-				// final BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(outputFile));
-				// try {
-				// 	try {
-				// 		bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
-				// 		os.flush();
-				// 		mHandler.sendMessage(mHandler.obtainMessage(MSG_MEDIA_UPDATE, outputFile.getPath()));
-				// 	} catch (final IOException e) {
-				// 	}
-				// } finally {
-				// 	os.close();
-				// }
+				// get buffered output stream for saving a captured still image as a file on external storage.
+				// the file name is came from current time.
+				// You should use extension name as same as CompressFormat when calling Bitmap#compress.
+				final File outputFile = TextUtils.isEmpty(path)
+					? MediaMuxerWrapper.getCaptureFile(Environment.DIRECTORY_DCIM, ".png")
+					: new File(path);
+				final BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(outputFile));
+				try {
+					try {
+						bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+						os.flush();
+						mHandler.sendMessage(mHandler.obtainMessage(MSG_MEDIA_UPDATE, outputFile.getPath()));
+						callOnCaptureStillFinish();
+					} catch (final IOException e) {
+					}
+				} finally {
+					os.close();
+				}
 			} catch (final Exception e) {
 				callOnError(e);
 			}
 		}
 
-		public void handleStartRecording() {
+		public void handleStartRecording(final String path) {
 			if (DEBUG) Log.v(TAG_THREAD, "handleStartRecording:");
 			try {
+				mRecordPath = path;
 				if ((mUVCCamera == null) || (mMuxer != null)) return;
-				final MediaMuxerWrapper muxer = new MediaMuxerWrapper(".mp4");	// if you record audio only, ".m4a" is also OK.
+				final MediaMuxerWrapper muxer = new MediaMuxerWrapper(path);	// if you record audio only, ".m4a" is also OK.
 				MediaVideoBufferEncoder videoEncoder = null;
-				int width = getWidth();
-				int height = getHeight();
-				Size nearestSize = mUVCCamera.getNearestSize(width, height, UVCCamera.FRAME_FORMAT_MJPEG);
-				if (nearestSize != null) {
-					width = nearestSize.width;
-					height = nearestSize.height;
-				} else {
-					nearestSize = mUVCCamera.getNearestSize(width, height, UVCCamera.FRAME_FORMAT_YUYV);
-					if (nearestSize != null) {
-						width = nearestSize.width;
-						height = nearestSize.height;
-					}
-				}
 				switch (mEncoderType) {
 				case 1:	// for video capturing using MediaVideoEncoder
-					new MediaVideoEncoder(muxer, width, height, mMediaEncoderListener);
+					new MediaVideoEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
 					break;
 				case 2:	// for video capturing using MediaVideoBufferEncoder
-					videoEncoder = new MediaVideoBufferEncoder(muxer, width, height, mMediaEncoderListener);
+					videoEncoder = new MediaVideoBufferEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
 					break;
 				// case 0:	// for video capturing using MediaSurfaceEncoder
 				default:
-					new MediaSurfaceEncoder(muxer, width, height, mMediaEncoderListener);
+					new MediaSurfaceEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
 					break;
 				}
 				if (true) {
@@ -754,7 +873,8 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			public void onStopped(final MediaEncoder encoder) {
 				if (DEBUG) Log.v(TAG_THREAD, "onStopped:encoder=" + encoder);
 				if ((encoder instanceof MediaVideoEncoder)
-					|| (encoder instanceof MediaSurfaceEncoder))
+					|| (encoder instanceof MediaSurfaceEncoder)
+						|| (encoder instanceof MediaVideoBufferEncoder))
 				try {
 					mIsRecording = false;
 					final Activity parent = mWeakParent.get();
@@ -764,10 +884,14 @@ abstract class AbstractUVCCameraHandler extends Handler {
 							mUVCCamera.stopCapture();
 						}
 					}
-					final String path = encoder.getOutputPath();
+					final String path;
+					if (encoder instanceof MediaSurfaceEncoder)
+						path = encoder.getOutputPath();
+					else
+						path = mRecordPath;
 					if (!TextUtils.isEmpty(path)) {
-						callOnVideoRecorded(path);
 						mHandler.sendMessageDelayed(mHandler.obtainMessage(MSG_MEDIA_UPDATE, path), 1000);
+						callOnRecordFinish();
 					} else {
 						final boolean released = (mHandler == null) || mHandler.mReleased;
 						if (released || parent == null || parent.isDestroyed()) {
@@ -909,33 +1033,33 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			}
 		}
 
-		private void callOnPictureTaken(Bitmap bitmap) {
-			for (final CameraCallback callback: mCallbacks) {
-				try {
-					callback.onPictureTaken(bitmap);
-				} catch (final Exception e) {
-					mCallbacks.remove(callback);
-					Log.w(TAG, e);
-				}
-			}
-		}
-
-		private void callOnVideoRecorded(String path) {
-			for (final CameraCallback callback: mCallbacks) {
-				try {
-					callback.onVideoRecorded(path);
-				} catch (final Exception e) {
-					mCallbacks.remove(callback);
-					Log.w(TAG, e);
-				}
-			}
-		}
-
 		private void callOnError(final Exception e) {
 			for (final CameraCallback callback: mCallbacks) {
 				try {
 					callback.onError(e);
 				} catch (final Exception e1) {
+					mCallbacks.remove(callback);
+					Log.w(TAG, e);
+				}
+			}
+		}
+
+		private void callOnCaptureStillFinish() {
+			for (final CameraCallback callback: mCallbacks) {
+				try {
+					callback.onCaptureStillFinish();
+				} catch (final Exception e) {
+					mCallbacks.remove(callback);
+					Log.w(TAG, e);
+				}
+			}
+		}
+
+		private void callOnRecordFinish() {
+			for (final CameraCallback callback: mCallbacks) {
+				try {
+					callback.onRecordFinish();
+				} catch (final Exception e) {
 					mCallbacks.remove(callback);
 					Log.w(TAG, e);
 				}

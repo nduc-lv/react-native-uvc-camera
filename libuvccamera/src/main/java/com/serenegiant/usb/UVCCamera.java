@@ -24,6 +24,7 @@
 package com.serenegiant.usb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -338,25 +339,6 @@ public class UVCCamera {
 		return getSupportedSize(type, mSupportedSize);
 	}
 
-	public Size getNearestSize(final int width, final int height, int frameFormat) {
-		final int type = (frameFormat > 0) ? 6 : 4;
-		List<Size> sizes = getSupportedSize(type, mSupportedSize);
-		int required_area = width * height;
-		Size preview_size = null;
-		int error = Integer.MAX_VALUE;
-
-		for (Size s : sizes) {
-			int s_area = s.width * s.height;
-			int abs_error = Math.abs(s_area - required_area);
-			if (abs_error < error){
-			preview_size = s;
-				error = abs_error;
-			}
-		}
-
-		return preview_size;
-	}
-
 	public static List<Size> getSupportedSize(final int type, final String supportedSize) {
 		final List<Size> result = new ArrayList<Size>();
 		if (!TextUtils.isEmpty(supportedSize))
@@ -581,9 +563,30 @@ public class UVCCamera {
     	}
     }
 //================================================================================
-    /**
-     * @param brightness [%]
-     */
+	public synchronized int getBrightnessMin()	{return mBrightnessMin;}
+	public synchronized int getBrightnessDef()	{return mBrightnessDef;}
+	public synchronized int getBrightnessMax()	{return mBrightnessMax;}
+
+	public synchronized void updateBrightnessLimit() {
+		if (mNativePtr != 0) {
+			nativeUpdateBrightnessLimit(mNativePtr);
+		}
+	}
+	public synchronized int getBrightness() {
+		return getBrightness(nativeGetBrightness(mNativePtr));
+	}
+
+	public synchronized int getBrightness(final int brightness_abs) {
+		int result = 0;
+		if (mNativePtr != 0) {
+			final float range = Math.abs(mBrightnessMax - mBrightnessMin);
+			if (range > 0) {
+				result = (int)((brightness_abs - mBrightnessMin) * 100.f / range);
+			}
+		}
+		return result;
+	}
+
 	public synchronized void setBrightness(final int brightness) {
     	if (mNativePtr != 0) {
  		   final float range = Math.abs(mBrightnessMax - mBrightnessMin);
@@ -592,36 +595,17 @@ public class UVCCamera {
     	}
     }
 
-    /**
-     * @param brightness_abs
-     * @return brightness[%]
-     */
-	public synchronized int getBrightness(final int brightness_abs) {
-	   int result = 0;
-	   if (mNativePtr != 0) {
-		   nativeUpdateBrightnessLimit(mNativePtr);
-		   final float range = Math.abs(mBrightnessMax - mBrightnessMin);
-		   if (range > 0) {
-			   result = (int)((brightness_abs - mBrightnessMin) * 100.f / range);
-		   }
-	   }
-	   return result;
-	}
-
-    /**
-     * @return brightness[%]
-     */
-	public synchronized int getBrightness() {
-    	return getBrightness(nativeGetBrightness(mNativePtr));
-    }
-
-	public synchronized void resetBrightness() {
+   	public synchronized void resetBrightness() {
     	if (mNativePtr != 0) {
     		nativeSetBrightness(mNativePtr, mBrightnessDef);
     	}
     }
 
 //================================================================================
+	public synchronized int getContrastMin()	{return mContrastMin;}
+	public synchronized int getContrastDef()	{return mContrastDef;}
+	public synchronized int getContrastMax()	{return mContrastMax;}
+
     /**
      * @param contrast [%]
      */
@@ -920,6 +904,71 @@ public class UVCCamera {
     	}
     }
 
+	//================================================================================
+    public synchronized void updateExposureModeLimt()
+    {
+        if (mNativePtr != 0) {
+            nativeUpdateExposureModeLimit(mNativePtr);
+        }
+    }
+	public synchronized void setExposureMode(final int exposureMode) {
+		if (mNativePtr != 0) {
+			nativeSetExposureMode(mNativePtr, exposureMode);
+		}
+	}
+
+	public synchronized int getExposureMode() {
+		return nativeGetExposureMode(mNativePtr);
+	}
+
+	public synchronized void resetExposureMode() {
+		if (mNativePtr != 0) {
+			nativeSetExposureMode(mNativePtr, mExposureModeDef);
+		}
+	}
+
+	//================================================================================
+	public synchronized int getExposureAbsMin()	{return mExposureMin;}
+	public synchronized int getExposureAbsDef()	{return mExposureDef;}
+	public synchronized int getExposureAbsMax()	{return mExposureMax;}
+
+	public synchronized void updateExposureLimit() {
+		if (mNativePtr != 0) {
+			nativeUpdateExposureLimit(mNativePtr);
+		}
+	}
+
+	public synchronized int getExposureAbs() {
+		return getExposureAbs(nativeGetExposure(mNativePtr));
+	}
+
+	public synchronized int getExposureAbs(final int exposure_abs) {
+		int result = 0;
+		if (mNativePtr != 0) {
+			final float range = Math.abs(mExposureMax - mExposureMin);
+			if (range > 0) {
+				result = (int)((exposure_abs - mExposureMin) * 100.f / range);
+			}
+		}
+		return result;
+	}
+
+	public synchronized void setExposureAbs(final int exposure) {
+		if (mNativePtr != 0) {
+			final float range = Math.abs(mExposureMax - mExposureMin);
+			if (range > 0) {
+				int v = (int)(exposure / 100.f * range) + mExposureMin;
+				nativeSetExposure(mNativePtr, v);
+			}
+
+		}
+	}
+
+	public synchronized void resetExposureAbs() {
+		if (mNativePtr != 0) {
+			nativeSetExposure(mNativePtr, mExposureDef);
+		}
+	}
 //================================================================================
 	public synchronized void updateCameraParams() {
     	if (mNativePtr != 0) {
@@ -1240,4 +1289,118 @@ public class UVCCamera {
 	private final native int nativeUpdatePrivacyLimit(final long id_camera);
     private static final native int nativeSetPrivacy(final long id_camera, final boolean privacy);
     private static final native int nativeGetPrivacy(final long id_camera);
+
+    // add by qzm
+	private static final native int nativeUVCExtWrite(final long id_camera, int addr, byte [] pdat, int len);
+	private static final native int nativeUVCExtRead(final long id_camera, int addr, byte [] pdat, int len);
+
+	private static final int CMD_ZOOM_NOAF = 1;
+	private static final int CMD_ZOOM_DOAF = 2;
+	private static final int CMD_FOCUSMODE_MANUAL = 3;
+	private static final int CMD_FOCUSMODE_AUTO = 4;
+	private static final int CMD_FOCUS_MANUAL = 5;
+	private static final int CMD_FOCUS_AUTO = 6;
+	private static final int CMD_GOHOME = 7;
+	private static final int CMD_CHECKMOVING_YES = 8;
+	private static final int CMD_CHECKMOVING_NO = 9;
+	private static final int CMD_SET_SEARCHTABLE = 10;
+
+	private int EXT_ADR_W  = 0xd843;	//0xc7c6;
+	private int EXT_ADR_R	= (EXT_ADR_W + 8);
+
+	public synchronized int getOpticalZoomMin()	{return 0;}
+	public synchronized int getOpticalZoomMax()	{return 5250;}
+	public synchronized int getOpticalFocusMin()	{return 0;}
+	public synchronized int getOpticalFocusMax()	{return 3800;}
+
+
+	public synchronized int getOpticalZoom() {
+		if (mNativePtr != 0) {
+			byte[] pdat = new byte[6];
+			Arrays.fill(pdat, (byte) 0);
+			nativeUVCExtRead(mNativePtr, EXT_ADR_R, pdat, 6);
+			int v = (pdat[0] << 8) + pdat[1];
+			return v;
+		} else {
+			return 0;
+		}
+	}
+
+	public synchronized void setOpticalZoom(final int zoom, final int doAF) {
+		if (mNativePtr != 0) {
+			byte [] pdat = new byte[6];
+			Arrays.fill(pdat, (byte)0);
+			pdat[0] = (byte)(doAF > 0 ? CMD_ZOOM_DOAF : CMD_ZOOM_NOAF);
+			pdat[1] = (byte)((zoom & 0x1f00)>>8);
+			pdat[2] = (byte)(zoom & 0xff);
+			nativeUVCExtWrite(mNativePtr, EXT_ADR_W, pdat, 6);
+		}
+	}
+
+
+	public synchronized int getOpticalFocusMode() {
+		if (mNativePtr != 0) {
+			byte[] pdat = new byte[6];
+			Arrays.fill(pdat, (byte) 0);
+			nativeUVCExtRead(mNativePtr, EXT_ADR_R, pdat, 6);
+			return pdat[4];
+		} else {
+			return -1;
+		}
+	}
+	public synchronized void setOpticalFocusMode(final int focusMode) {
+		if (mNativePtr != 0) {
+			byte [] pdat = new byte[6];
+			Arrays.fill(pdat, (byte)0);
+			pdat[0] = (byte)(focusMode > 0 ? CMD_FOCUSMODE_AUTO : CMD_FOCUSMODE_MANUAL);
+			nativeUVCExtWrite(mNativePtr, EXT_ADR_W, pdat, 6);
+		}
+	}
+
+	public synchronized int getOpticalFocus() {
+		if (mNativePtr != 0) {
+			byte[] pdat = new byte[6];
+			Arrays.fill(pdat, (byte) 0);
+			nativeUVCExtRead(mNativePtr, EXT_ADR_R, pdat, 6);
+			int v = (pdat[2] << 8) + pdat[3];
+			return v;
+		} else {
+			return 0;
+		}
+	}
+
+
+	public synchronized void setOpticalFocus(final int focus) {
+		if (mNativePtr != 0) {
+			byte [] pdat = new byte[6];
+			Arrays.fill(pdat, (byte)0);
+			pdat[0] = (byte)CMD_FOCUS_MANUAL;;
+			pdat[1] = (byte)((focus & 0x1f00)>>8);
+			pdat[2] = (byte)(focus & 0xff);
+			nativeUVCExtWrite(mNativePtr, EXT_ADR_W, pdat, 6);
+		}
+	}
+
+	public synchronized void doAutoFocusOnce() {
+		if (mNativePtr != 0) {
+			byte [] pdat = new byte[6];
+			Arrays.fill(pdat, (byte)0);
+			pdat[0] = (byte)CMD_FOCUS_AUTO;
+			nativeUVCExtWrite(mNativePtr, EXT_ADR_W, pdat, 6);
+		}
+	}
+
+	public synchronized void resetZoomAndFocus() {
+		if (mNativePtr != 0) {
+			byte [] pdat = new byte[6];
+			Arrays.fill(pdat, (byte)0);
+			pdat[0] = (byte)CMD_GOHOME;
+			nativeUVCExtWrite(mNativePtr, EXT_ADR_W, pdat, 6);
+		}
+	}
+
+    public synchronized void setZoomType(int type) {
+        EXT_ADR_W  = type;
+        EXT_ADR_R	= (EXT_ADR_W + 8);
+    }
 }

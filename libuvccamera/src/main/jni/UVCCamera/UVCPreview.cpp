@@ -493,7 +493,7 @@ int UVCPreview::prepare_preview(uvc_stream_ctrl_t *ctrl) {
 			pthread_mutex_lock(&preview_mutex);
 			if (LIKELY(mPreviewWindow)) {
 				ANativeWindow_setBuffersGeometry(mPreviewWindow,
-					frameWidth, frameHeight - (frameHeight % 8), previewFormat);
+					frameWidth, frameHeight, previewFormat);
 			}
 			pthread_mutex_unlock(&preview_mutex);
 		} else {

@@ -41,7 +41,7 @@ public class MediaMuxerWrapper {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = "MediaMuxerWrapper";
 
-	private static final String DIR_NAME = "USBCamera";
+	private static final String DIR_NAME = "USBCameraTest";
     private static final SimpleDateFormat mDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
 
 	private String mOutputPath;
@@ -50,15 +50,13 @@ public class MediaMuxerWrapper {
 	private boolean mIsStarted;
 	private MediaEncoder mVideoEncoder, mAudioEncoder;
 
-	/**
-	 * Constructor
-	 * @param ext extension of output file
-	 * @throws IOException
-	 */
-	public MediaMuxerWrapper(String ext) throws IOException {
-		if (TextUtils.isEmpty(ext)) ext = ".mp4";
+
+	public MediaMuxerWrapper(String path) throws IOException {
 		try {
-			mOutputPath = getCaptureFile(Environment.DIRECTORY_MOVIES, ext).toString();
+			if (TextUtils.isEmpty(path))
+				mOutputPath = getCaptureFile(Environment.DIRECTORY_MOVIES, "*.mp4").toString();
+			else
+				mOutputPath = path;
 		} catch (final NullPointerException e) {
 			throw new RuntimeException("This app has no permission of writing external storage");
 		}

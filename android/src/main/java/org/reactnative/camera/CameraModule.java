@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+// this file is for react-native code to use native function
 public class CameraModule extends ReactContextBaseJavaModule {
   private static final String TAG = "UvcCameraModule";
 
@@ -32,6 +33,7 @@ public class CameraModule extends ReactContextBaseJavaModule {
   static final int VIDEO_4x3 = 4;
 
   public static final Map<String, Object> VALID_BARCODE_TYPES =
+  // {key, barcode format}
       Collections.unmodifiableMap(new HashMap<String, Object>() {
         {
           put("aztec", BarcodeFormat.AZTEC.toString());

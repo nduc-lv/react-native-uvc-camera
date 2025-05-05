@@ -107,6 +107,7 @@ public class CameraView extends FrameLayout {
         final PreviewImpl preview = createPreviewImpl(context);
         mCallbacks = new CallbackBridge();
 
+        // so this module can only handle uvc camera, great to know
         mImpl = new CameraUvc(mCallbacks, preview, context);
 
         // Display orientation detector
@@ -119,6 +120,7 @@ public class CameraView extends FrameLayout {
     }
 
     @NonNull
+    // this will create a texture (preview on the screen)
     private PreviewImpl createPreviewImpl(Context context) {
         PreviewImpl preview;
         preview = new TextureViewPreview(context, this);

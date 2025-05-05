@@ -1,6 +1,7 @@
 package org.reactnative.camera;
 
 import android.Manifest;
+import android.util.Log;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -32,6 +33,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.security.auth.callback.Callback;
 
 public class RNCameraView extends CameraView implements LifecycleEventListener, BarCodeScannerAsyncTaskDelegate, FaceDetectorAsyncTaskDelegate,
     BarcodeDetectorAsyncTaskDelegate, TextRecognizerAsyncTaskDelegate {
@@ -66,6 +69,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
   private int mFaceDetectionClassifications = RNFaceDetector.NO_CLASSIFICATIONS;
   private int mGoogleVisionBarCodeType = Barcode.ALL_FORMATS;
 
+  // injected React context that includes theme information.
   public RNCameraView(ThemedReactContext themedReactContext) {
     super(themedReactContext, true);
     mThemedReactContext = themedReactContext;
@@ -124,6 +128,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
         int correctWidth = width;
         int correctHeight = height;
         byte[] correctData = data;
+        Log.i("CameraUvc", "onFramePreview");
         if (correctRotation == 90) {
           correctWidth = height;
           correctHeight = width;

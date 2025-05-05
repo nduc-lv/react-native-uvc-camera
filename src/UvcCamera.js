@@ -344,8 +344,9 @@ export default class Camera extends React.Component<PropsType, StateType> {
 
   render() {
     const nativeProps = this._convertNativeProps(this.props);
-
+    console.log("React-Natve", nativeProps);
     if (this.state.isAuthorized || this.hasFaCC()) {
+      console.log("Render Children");
       return (
         <RNCamera
           {...nativeProps}
@@ -363,8 +364,10 @@ export default class Camera extends React.Component<PropsType, StateType> {
         </RNCamera>
       );
     } else if (!this.state.isAuthorizationChecked) {
+      console.log("React-Native not checking for authorization", this.state.isAuthorizationChecked);
       return this.props.pendingAuthorizationView;
     } else {
+      console.log("React-Native not Authorized", this.state.isAuthorized);
       return this.props.notAuthorizedView;
     }
   }

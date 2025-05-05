@@ -41,9 +41,12 @@ import com.serenegiant.widget.UVCCameraTextureView;
 import java.io.ByteArrayOutputStream;
 import java.util.Set;
 
+import org.reactnative.camera.Constants;
+
 @SuppressWarnings("MissingPermission")
 @TargetApi(21)
 class CameraUvc extends CameraViewImpl {
+    // this for camera uvc, -> see uvc example for this file
 
     private static final String TAG = "CameraUvc";
 
@@ -84,6 +87,7 @@ class CameraUvc extends CameraViewImpl {
     /**
      * Handler to execute camera related methods sequentially on private thread
      */
+
     private UVCCameraHandler mCameraHandler;
     /**
      * for camera preview display
@@ -96,6 +100,7 @@ class CameraUvc extends CameraViewImpl {
             = new UVCCameraHandler.CameraCallback() {
         @Override
         public void onOpen(){
+            Log.i(TAG, "Camera Opened");
             mCallback.onCameraOpened();
             startCaptureSession();
         }
@@ -118,7 +123,7 @@ class CameraUvc extends CameraViewImpl {
         public void onStartRecording(){}
         @Override
         public void onStopRecording(){}
-        @Override
+        
         public void onPictureTaken(Bitmap bitmap){
             Matrix matrix = new Matrix();
             int width = bitmap.getWidth();
@@ -136,7 +141,6 @@ class CameraUvc extends CameraViewImpl {
             //     mCallback.onFramePreview(bmp, bmp.getWidth(), bmp.getHeight(), mDisplayOrientation);
             // }
         }
-        @Override
         public void onVideoRecorded(String path){
             mCallback.onVideoRecorded(path);
         }
@@ -145,6 +149,10 @@ class CameraUvc extends CameraViewImpl {
             Toast.makeText(mContext.getCurrentActivity(), "errorException: " + e, Toast.LENGTH_SHORT).show();
             Log.e(TAG, "errorException: ", e);
         }
+        @Override
+		public void onCaptureStillFinish() {};
+        @Override
+		public void onRecordFinish() {};
     };
 
     private int mImageFormat;
@@ -175,14 +183,16 @@ class CameraUvc extends CameraViewImpl {
 
     private Surface mPreviewSurface;
 
+    // PreviewImpl is extended by SurfaceViewPreview or TextureViewPreview
     CameraUvc(Callback callback, PreviewImpl preview, Context context) {
         super(callback, preview);
+        Log.i(TAG, callback.toString());
         mUVCCameraView = (UVCCameraTextureView) preview.getView();
         mUVCCameraView.setAspectRatio(PREVIEW_WIDTH / (float)PREVIEW_HEIGHT);
 
         mContext = (ThemedReactContext) context;
 
-        mUSBMonitor = new USBMonitor(mContext.getCurrentActivity(), mOnDeviceConnectListener);
+        mUSBMonitor = new USBMonitor(mContext.getCurrentActivity(), this.mOnDeviceConnectListener); // usb subject
         mCameraHandler = UVCCameraHandler.createHandler(mContext.getCurrentActivity(), mUVCCameraView,
           USE_SURFACE_ENCODER ? 0 : 1, PREVIEW_WIDTH, PREVIEW_HEIGHT, PREVIEW_MODE);
 
@@ -211,15 +221,20 @@ class CameraUvc extends CameraViewImpl {
     private final OnDeviceConnectListener mOnDeviceConnectListener = new OnDeviceConnectListener() {
         @Override
         public void onAttach(final UsbDevice device) {
-            // Toast.makeText(mContext.getCurrentActivity(), "USB_DEVICE_ATACHED", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext.getCurrentActivity(), "USB_DEVICE_ATACHED", Toast.LENGTH_SHORT).show();
             if (!mCameraHandler.isOpened()) {
+                Log.i(TAG, "cameraHandler is not opened");
+                // display a popup to get the device
                 CameraDialog.showDialog(mContext.getCurrentActivity(), mUSBMonitor);
+            }
+            else {
+                Log.i(TAG, "cameraHandler is opened");
             }
         }
 
         @Override
         public void onConnect(final UsbDevice device, final UsbControlBlock ctrlBlock, final boolean createNew) {
-            // Toast.makeText(mContext.getCurrentActivity(), "onConnect", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext.getCurrentActivity(), "onConnect", Toast.LENGTH_SHORT).show();
             mCtrlBlock = ctrlBlock;
             mCameraHandler.open(mCtrlBlock);
         }
@@ -243,7 +258,24 @@ class CameraUvc extends CameraViewImpl {
 
         @Override
         public void onDettach(final UsbDevice device) {
-            Toast.makeText(mContext.getCurrentActivity(), "USB_DEVICE_DETACHED", Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "no device is found");
+            try {
+                Toast.makeText(mContext.getCurrentActivity(), "USB_DEVICE_DETACHED", Toast.LENGTH_SHORT).show();
+                if (mCameraHandler != null) {
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mCameraHandler.isPreviewing()) {
+                                stopCaptureSession();
+                            }
+                            mCameraHandler.close();
+                        }
+                    }, 0);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error showing toast", e);
+            }
         }
 
         @Override
@@ -455,7 +487,7 @@ class CameraUvc extends CameraViewImpl {
         int saved = mWhiteBalance;
         mWhiteBalance = whiteBalance;
         if (mCameraHandler.isPreviewing()) {
-            updateWhiteBalance();
+            // updateWhiteBalance();
             startCaptureSession();
        }
     }
@@ -498,6 +530,10 @@ class CameraUvc extends CameraViewImpl {
      */
     void startCaptureSession() {
         if (!isCameraOpened() || !mPreview.isReady()) {
+            Log.i("CameraUvc", "Unable to start capture");
+            if (!mPreview.isReady()) {
+                Log.i("CameraUvc", "Preview surface not ready");
+            }
             return;
         }
         mCameraHandler.startPreview(getPreviewSurface());
@@ -546,9 +582,9 @@ class CameraUvc extends CameraViewImpl {
      */
     void updateAutoFocus() {
         if (mAutoFocus) {
-            mAutoFocus = mCameraHandler.getAutoFocus();
+            mAutoFocus = getAutoFocus();
         }
-        mCameraHandler.setAutoFocus(mAutoFocus);
+        setAutoFocus(mAutoFocus);
     }
 
     /**
@@ -589,9 +625,9 @@ class CameraUvc extends CameraViewImpl {
     /**
      * Updates the internal state of white balance to {@link #mWhiteBalance}.
      */
-    void updateWhiteBalance() {
-        mCameraHandler.setAutoWhiteBlance(true);
-    }
+    // void updateWhiteBalance() {
+    //     mCameraHandler.setAutoWhiteBlance(true);
+    // }
 
     /**
      * Captures a still picture.

@@ -270,6 +270,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 
 		@Override
 		public void onConnect(final UsbDevice device, final UsbControlBlock ctrlBlock, final boolean createNew) {
+			Toast.makeText(MainActivity.this, "USB_DEVICE_CONNECTED", Toast.LENGTH_SHORT).show();
 			if (DEBUG) Log.v(TAG, "onConnect:");
 			synchronized (mSync) {
 				if (mCameraHandler != null) {

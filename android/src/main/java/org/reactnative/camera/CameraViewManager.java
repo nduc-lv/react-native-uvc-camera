@@ -11,7 +11,8 @@ import com.google.android.cameraview.AspectRatio;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import android.util.Log;
+// this class will use RNCamera View Class -> this class maybe for managing view
 public class CameraViewManager extends ViewGroupManager<RNCameraView> {
   public enum Events {
     EVENT_CAMERA_READY("onCameraReady"),
@@ -50,6 +51,7 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
   }
 
   @Override
+  // this will draw a new camera frame on the screen
   protected RNCameraView createViewInstance(ThemedReactContext themedReactContext) {
     return new RNCameraView(themedReactContext);
   }
@@ -64,6 +66,7 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
     return builder.build();
   }
 
+  // this part is for translateing react property to native code function
   @ReactProp(name = "rotation")
   public void setDisplayRotation(RNCameraView view, int rotation) {
     view.setDisplayRotation(rotation);

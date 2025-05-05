@@ -41,8 +41,7 @@ class TextureViewPreview extends PreviewImpl {
         mTextureView.setCallback(new CameraViewInterface.Callback() {
 
             @Override
-            public void onSurfaceCreated(CameraViewInterface view, Surface surface, int width, int height) {
-                setSize(width, height);
+            public void onSurfaceCreated(CameraViewInterface view, Surface surface) {
                 configureTransform();
                 dispatchSurfaceChanged();
             }

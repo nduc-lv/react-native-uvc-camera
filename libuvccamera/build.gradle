@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply from: "../build.gradle"
+
 /*
  *  UVCCamera
  *  library and sample to access to UVC web camera on non-rooted Android device
@@ -26,15 +28,14 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 android {
 	compileSdkVersion versionCompiler
-	buildToolsVersion versionBuildTool
 
 	compileOptions {
-		sourceCompatibility javaSourceCompatibility
-		targetCompatibility javaTargetCompatibility
+		sourceCompatibility JavaVersion.VERSION_1_8
+		targetCompatibility JavaVersion.VERSION_1_8
 	}
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 18
 		targetSdkVersion versionTarget
     }
 
@@ -86,10 +87,8 @@ clean.dependsOn 'ndkClean'
 dependencies {
     implementation fileTree(dir: new File(buildDir, 'libs'), include: '*.jar')
 
-	implementation "com.android.support:support-v4:${supportLibVersion}"
-	implementation "com.android.support:support-annotations:${supportLibVersion}"
+	implementation "androidx.legacy:legacy-support-v4:${supportLibVersion}"
+	implementation "androidx.annotation:annotation:${supportLibVersion}"
 
-	implementation("com.serenegiant:common:${commonLibVersion}") {
-		exclude module: 'support-v4'
-	}
+	implementation "com.serenegiant:common:$commonLibVersion"
 }

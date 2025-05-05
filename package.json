@@ -1,9 +1,12 @@
 {
-  "name": "react-native-uvc-camera",
+  "name": "@vundl/react-native-uvc-camera",
   "version": "2.0.2",
   "description": "A USB video class Camera component for React Native",
   "main": "src/index.js",
+  "types": "types/index.d.ts",
+  "nativePackage": true,
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,5 +24,38 @@
   "bugs": {
     "url": "https://github.com/flyskywhy/react-native-uvc-camera/issues"
   },
-  "homepage": "https://github.com/flyskywhy/react-native-uvc-camera#readme"
+  "homepage": "https://github.com/flyskywhy/react-native-uvc-camera#readme",
+  "dependencies": {
+    "prop-types": "^15.6.2"
+  },
+  "peerDependencies": {
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@babel/runtime": "^7.3.1",
+    "@commitlint/cli": "^9.1.2",
+    "@commitlint/config-conventional": "^9.1.2",
+    "@commitlint/prompt": "^9.1.2",
+    "@semantic-release/commit-analyzer": "^8.0.1",
+    "@semantic-release/git": "^9.0.0",
+    "@semantic-release/github": "^7.0.7",
+    "@semantic-release/npm": "^7.0.5",
+    "@semantic-release/release-notes-generator": "^9.0.1",
+    "@types/react": "^16.8.3",
+    "@types/react-native": "^0.63.13",
+    "babel-eslint": "^10.1.0",
+    "commitizen": "^4.2.1",
+    "eslint": "^7.8.0",
+    "eslint-plugin-flowtype": "^5.2.0",
+    "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-react": "^7.10.0",
+    "eslint-plugin-react-native": "^3.2.1",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.13",
+    "pre-commit": "^1.2.2",
+    "prettier": "^2.1.1",
+    "react-native": "0.78.2",
+    "semantic-release": "^17.1.1"
+  }
 }

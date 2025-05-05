@@ -738,6 +738,7 @@ public class USBVendorId {
 		IDS.put(7348, "OPEX CORPORATION");
 		IDS.put(7390, "Telecommunications Technology Association (TTA)");
 		IDS.put(7434, "Visteon Corporation");
+		IDS.put(7531, "DatCamera");
 		IDS.put(7465, "Horng Tong Enterprise Co., Ltd.");
 		IDS.put(7501, "Pegatron Corporation");
 		IDS.put(7516, "Fresco Logic Inc.");

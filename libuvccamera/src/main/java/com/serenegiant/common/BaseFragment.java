@@ -20,25 +20,24 @@
  *  Files in the libjpeg-turbo, libusb, libuvc, rapidjson folder
  *  may have a different license, see the respective files.
  */
-
 package com.serenegiant.common;
-
-import android.Manifest;
-import android.annotation.SuppressLint;
-import android.app.Fragment;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.util.Log;
-import android.widget.Toast;
-
-import com.serenegiant.dialog.MessageDialogFragment;
-import com.serenegiant.utils.BuildCheck;
-import com.serenegiant.utils.HandlerThreadHandler;
-import com.serenegiant.utils.PermissionCheck;
+ import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.app.Fragment;
+ import android.content.pm.PackageManager;
+ import android.os.Bundle;
+ import android.os.Handler;
+ import android.os.Looper;
+ import androidx.annotation.NonNull;
+ import androidx.annotation.StringRes;
+ import android.util.Log;
+ import android.widget.Toast;
+ 
+ import com.serenegiant.dialog.MessageDialogFragment;
+ import com.serenegiant.utils.BuildCheck;
+ import com.serenegiant.utils.HandlerThreadHandler;
+ import com.serenegiant.utils.PermissionCheck;
+ 
 
 /**
  * Created by saki on 2016/11/19.
